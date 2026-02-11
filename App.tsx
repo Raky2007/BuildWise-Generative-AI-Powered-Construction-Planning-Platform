@@ -1,18 +1,18 @@
 
-import { useState, useEffect } from 'react';
+// Add React import to resolve 'React' namespace error for React.FC
+import React, { useState, useEffect } from 'react';
 import { ProjectInfo, FeasibilityReport, NavigationState, HistoryEntry } from './types';
 import Sidebar from './components/Sidebar';
 import ProjectForm from './components/ProjectForm';
 import Dashboard from './components/Dashboard';
 import Timeline from './components/Timeline';
 import History from './components/History';
-import { generateFeasibilityReport, generateBlueprintVisual, predictDynamicRisks } from './services/geminiService';
+import { generateFeasibilityReport, predictDynamicRisks } from './services/geminiService';
 
 const App: React.FC = () => {
   const [activeStep, setActiveStep] = useState<NavigationState['currentStep']>('conception');
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [report, setReport] = useState<FeasibilityReport | null>(null);
-  const [blueprint, setBlueprint] = useState<string>('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -29,17 +29,12 @@ const App: React.FC = () => {
     { title: "Safety Scan", text: "Checking building rules.", icon: "shield" }
   ]);
 
-  // Load history from localStorage on mount
   useEffect(() => {
     setIsHistoryLoading(true);
     try {
       const saved = localStorage.getItem('build_history');
       if (saved) {
         setHistory(JSON.parse(saved));
-        setAiUpdates(prev => [
-          { title: "Storage Ready", text: "Your past plans are loaded locally.", icon: "database" },
-          ...prev.slice(1)
-        ]);
       }
     } catch (e) {
       console.error("Local storage load failed", e);
@@ -61,7 +56,6 @@ const App: React.FC = () => {
   const handleProjectSubmit = async (data: ProjectInfo) => {
     setIsLoading(true);
     setError(null);
-    setBlueprint('');
     
     try {
       setProject(data);
@@ -70,19 +64,11 @@ const App: React.FC = () => {
       setActiveStep('dashboard');
       setIsLoading(false); 
 
-      // Visuals in background
-      let finalBlueprint = '';
-      try {
-        finalBlueprint = await generateBlueprintVisual(data);
-        setBlueprint(finalBlueprint);
-      } catch (e) { console.warn(e); }
-
       const newEntry: HistoryEntry = {
         id: crypto.randomUUID(),
         timestamp: Date.now(),
         project: data,
         report: reportData,
-        blueprint: finalBlueprint
       };
       
       const updatedHistory = [newEntry, ...history];
@@ -98,7 +84,6 @@ const App: React.FC = () => {
   const handleSelectHistory = (entry: HistoryEntry) => {
     setProject(entry.project);
     setReport(entry.report);
-    setBlueprint(entry.blueprint || '');
     setActiveStep('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -127,7 +112,7 @@ const App: React.FC = () => {
       case 'conception':
         return <ProjectForm onSubmit={handleProjectSubmit} isLoading={isLoading} />;
       case 'dashboard':
-        return report && project ? <Dashboard report={report} project={project} blueprint={blueprint} /> : null;
+        return report && project ? <Dashboard report={report} project={project} /> : null;
       case 'planning':
         return report ? (
           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-32 lg:pb-12">
@@ -204,7 +189,6 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Right Tips Panel - Desktop only */}
       {project && report && activeStep !== 'conception' && activeStep !== 'history' && (
         <aside className="w-[300px] bg-white border-l p-8 hidden 2xl:block sticky top-0 h-screen overflow-y-auto">
           <div className="flex items-center gap-3 mb-10">

@@ -1,7 +1,5 @@
 {
   "name": "Build project",
   "description": "A generative AI–powered construction planning platform for cost estimation, scheduling, and project optimization.",
-  "requestFramePermissions": [
-    "camera"
-  ]
+  "requestFramePermissions": []
 }

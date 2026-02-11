@@ -1,4 +1,3 @@
-
 export type ProjectType = 'residential' | 'commercial' | 'industrial';
 
 export interface ProjectInfo {
@@ -46,7 +45,6 @@ export interface HistoryEntry {
   timestamp: number;
   project: ProjectInfo;
   report: FeasibilityReport;
-  blueprint?: string;
 }
 
 export interface NavigationState {
